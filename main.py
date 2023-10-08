@@ -4,6 +4,8 @@ import sys
 
 app = typer.Typer()
 
+# TODO: adde exception handler
+
 
 @app.command()
 def scan_directory(directory: str, only_critical: bool = False):
