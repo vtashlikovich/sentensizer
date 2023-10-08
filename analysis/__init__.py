@@ -1,4 +1,6 @@
 import os
+from analysis.base import DefaultLanguage
+from analysis.csharp import CSharpProcessor
 from analysis.java import JavaProcessor
 from analysis.python import PythonProcessor
 from analysis.javascript import JSProcessor
@@ -21,25 +23,18 @@ critical_files = 0
 python_processor = PythonProcessor(DEBUG=DEBUG, critical_threshold=RED_THRESHOLD)
 js_processor = JSProcessor(DEBUG=DEBUG, critical_threshold=RED_THRESHOLD)
 java_processor = JavaProcessor(DEBUG=DEBUG, critical_threshold=RED_THRESHOLD)
+csharp_processor = CSharpProcessor(DEBUG=DEBUG, critical_threshold=RED_THRESHOLD)
 
 
 def analyze_single_file(file_name: str):
     global errors_found, files_analyzed_num, total_sentences_num, critical_files
 
     sentences_count = 0
-    if file_name.endswith('.py'):
-        sentences_count = python_processor.process_file(file_name)
-        errors_found = not errors_found and python_processor.errors_found
-        total_sentences_num += sentences_count
-        files_analyzed_num += 1
-    elif file_name.endswith('.js') or file_name.endswith('.ts'):
-        sentences_count = js_processor.process_file(file_name)
-        errors_found = not errors_found and js_processor.errors_found
-        total_sentences_num += sentences_count
-        files_analyzed_num += 1
-    elif file_name.endswith('.java'):
-        sentences_count = java_processor.process_file(file_name)
-        errors_found = not errors_found and java_processor.errors_found
+    lang_processor: DefaultLanguage | None = select_language_processor(file_name)
+
+    if lang_processor is not None:
+        sentences_count = lang_processor.process_file(file_name)
+        errors_found = not errors_found and lang_processor.errors_found
         total_sentences_num += sentences_count
         files_analyzed_num += 1
     else:
@@ -78,3 +73,16 @@ def analyze_path(path: str):
             print(f'..dir {cur_dir_name} is skipped')
     else:
         print(f"The path '{path}' does not exist.")
+
+
+def select_language_processor(file_name: str) -> DefaultLanguage | None:
+    if file_name.endswith('.py'):
+        return python_processor
+    elif file_name.endswith('.js') or file_name.endswith('.ts'):
+        return js_processor
+    elif file_name.endswith('.java'):
+        return java_processor
+    elif file_name.endswith('.cs'):
+        return csharp_processor
+    else:
+        return None

@@ -1,6 +1,6 @@
 # Sentensizer
 
-Utility for counting meaningful code lines (sentences) in Python, JavaScript/TypScript, Java files. It helps to detect files that are too large and need refactoring.
+Utility for counting meaningful code lines (sentences) in Python, JavaScript/TypScript, Java, C# files. It helps to detect files that contain too many code lines and need refactoring.
 
 Default critical number of sentences per file - **70**.
 
