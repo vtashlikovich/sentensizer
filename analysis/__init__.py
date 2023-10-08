@@ -2,11 +2,13 @@ import os
 from analysis.python import PythonProcessor
 from analysis.javascript import JSProcessor
 
-dir_skip_list = ['__pycache__', 'env', 'venv']
+# TODO: make this list configurable
+dir_skip_list = ['__pycache__', 'env', 'venv', 'node_modules']
 
 DEBUG = False
 VERBOSE = False
 
+# TODO: make it configurable
 RED_THRESHOLD = 70
 ORANGE_THRESHOLD = 50
 ONLY_CRITICAL = False
