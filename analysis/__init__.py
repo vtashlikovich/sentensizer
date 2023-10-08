@@ -1,8 +1,8 @@
 import os
 from analysis.python import PythonProcessor
+from analysis.javascript import JSProcessor
 
 dir_skip_list = ['__pycache__', 'env', 'venv']
-skip_import = ['import', 'from']
 
 DEBUG = False
 VERBOSE = False
@@ -13,6 +13,8 @@ ONLY_CRITICAL = False
 errors_found = False
 
 python_processor = PythonProcessor(DEBUG=DEBUG, critical_threshold=RED_THRESHOLD)
+js_processor = JSProcessor(DEBUG=DEBUG, critical_threshold=RED_THRESHOLD)
+
 
 def analyze_single_file(file_name: str):
     global errors_found
@@ -21,13 +23,16 @@ def analyze_single_file(file_name: str):
     if file_name.endswith('.py'):
         sentences_count = python_processor.process_file(file_name)
         errors_found = not errors_found and python_processor.errors_found
-    elif VERBOSE:
-        print(f'...skip {file_name}')
+    elif file_name.endswith('.js') or file_name.endswith('.ts'):
+        sentences_count = js_processor.process_file(file_name)
+        errors_found = not errors_found and js_processor.errors_found
+    else:
+        if VERBOSE: print(f'...skip {file_name}')
         return None
 
-    if not ONLY_CRITICAL: print(f'{file_name}', end = ' ')
+    if not ONLY_CRITICAL: print(f'{file_name}', end=' ')
     if sentences_count >= RED_THRESHOLD:
-        if ONLY_CRITICAL: print(f'{file_name}', end = ' ')
+        if ONLY_CRITICAL: print(f'{file_name}', end=' ')
         print(f'- \033[91m{sentences_count}\033[00m')
     elif not ONLY_CRITICAL:
         if sentences_count >= ORANGE_THRESHOLD:
@@ -36,6 +41,7 @@ def analyze_single_file(file_name: str):
             print(f'- \033[92m {sentences_count}\033[00m')
 
     return sentences_count
+
 
 def analyze_path(path: str):
     if os.path.isfile(path):
