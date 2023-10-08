@@ -5,15 +5,23 @@ skip_import = ['import', 'from']
 
 DEBUG = False
 VERBOSE = False
+RED_THRESHOLD = 70
+ORANGE_THRESHOLD = 50
+ONLY_CRITICAL = False
 
-def perform_python_analysis(file_name: str):
-    if not DEBUG: print(f'analyze {file_name}', end=' ')
+errors_found = False
+
+# TODO: extract Python analysis into separate class
+
+def perform_python_analysis(file_name: str, silent: bool = False):
+    global errors_found
+    if not ONLY_CRITICAL and not silent and not DEBUG: print(f'analyze {file_name}', end=' ')
     if DEBUG: print(f'analyze {file_name}')
-    # loop through file
 
     file_obj = open(file_name, 'r')
     counter = 0
     ignore_mode = False
+    multiline_mode = False
 
     while line := file_obj.readline():
         line = line.strip()
@@ -22,20 +30,37 @@ def perform_python_analysis(file_name: str):
         if ignore_mode:
             if line_contains_notes_symbol(line):
                 ignore_mode = False
-        else:
-            if line and not line_is_comment(line):
-                if line_starts_with_note(line):
-                    if not line_ends_with_note(line):
+        elif line:
+            if multiline_mode and line_contains_notes_symbol(line):
+                multiline_mode = False
+                counter = process_py_line(counter, line, ignore_mode)
+            elif not line_is_single_comment(line):
+                if not multiline_mode and line_starts_with_note(line):
+                    if line_starts_multiline_text(line):
+                        multiline_mode = True
+                    else:
                         ignore_mode = True
-                    continue
+                        continue
+                elif line_starts_multiline_text(line):
+                    multiline_mode = True
 
-                line_parsed = line.split(' ')
-                if not ignore_mode and line_parsed[0] not in skip_import:
-                    if DEBUG: print('    .')
-                    counter += 1
+                counter = process_py_line(counter, line, ignore_mode)
 
-    print(f'- {counter}')
+    if not errors_found and counter >= RED_THRESHOLD:
+        errors_found = True
+
+    if not silent:
+        if counter >= RED_THRESHOLD:
+            if ONLY_CRITICAL:
+                print(f'analyze {file_name}', end = ' ')
+            print(f'- \033[91m{counter}\033[00m')
+        elif not ONLY_CRITICAL and counter >= ORANGE_THRESHOLD:
+            print(f'- \033[93m{counter}\033[00m')
+        elif not ONLY_CRITICAL:
+            print(f'- \033[92m {counter}\033[00m')
     file_obj.close()
+
+    return counter
 
 def analyze_single_file(file_name: str):
     if file_name.endswith('.py'):
@@ -62,14 +87,37 @@ def analyze(path: str):
     else:
         print(f"The path '{path}' does not exist.")
 
+# sample: """ ...
+# sample: ... """
 def line_contains_notes_symbol(line):
     return line.find('"""') > -1 or line.find('\'\'\'') > -1
 
-def line_is_comment(line):
-    return line.startswith('#')
+# sample: """ ...
+# sample: # ...
+def line_is_single_comment(line):
+    return line.startswith('#') or\
+        line_starts_with_note(line) and line_ends_with_note(line)
 
+# sample: """ ...
 def line_starts_with_note(line):
     return line.startswith('"""') or line.startswith('\'\'\'')
 
+# sample: ..."""
 def line_ends_with_note(line):
-    return line.endswith('"""') or line.endswith('\'\'\'')
+    return line.endswith('"""') and line.rfind('"""') > 0 or line.endswith('\'\'\'') \
+        and line.rfind('\'\'\'') > 0
+
+# sample: print( """ ...
+def line_starts_multiline_text(line):
+    line = line.replace(' ', '')
+    return line.find('(\'\'\'') > -1 or line.find('("""') > -1 or \
+        line.find('[\'\'\'') > -1 or line.find('["""') > -1 or \
+        line.find('{\'\'\'') > -1 or line.find('{"""') > -1 or \
+        line.find('=\'\'\'') > -1 or line.find('="""') > -1
+
+def process_py_line(counter, line, ignore_mode):
+    line_parsed = line.split(' ')
+    if not ignore_mode and line_parsed[0] not in skip_import:
+        if DEBUG: print('    .')
+        counter += 1
+    return counter
