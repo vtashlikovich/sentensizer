@@ -8,6 +8,8 @@ from analysis.javascript import JSProcessor
 # TODO: make this list configurable
 dir_skip_list = ['__pycache__', 'env', 'venv', 'node_modules']
 
+# TODO: ignore single brackets: {/}/(/)/);/: [];/})/){}/),/}));/() =>/]);/}),/]),/});/},/],/};/]));/})),/])),/}));
+
 DEBUG = False
 VERBOSE = False
 

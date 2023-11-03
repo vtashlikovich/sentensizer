@@ -9,9 +9,9 @@ app = typer.Typer()
 
 @app.command()
 def scan_directory(directory: str, only_critical: bool = False):
-    if only_critical:
-        az.ONLY_CRITICAL = True
+    az.ONLY_CRITICAL = only_critical
     az.analyze_path(directory)
+    
     if only_critical and az.errors_found:
         print(f'Found {az.critical_files} critical files.')
         sys.exit(1)
