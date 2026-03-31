@@ -4,14 +4,14 @@ import sys
 
 app = typer.Typer()
 
-# TODO: adde exception handler
+# TODO: add exception handler
 
 
 @app.command()
 def scan_directory(directory: str, only_critical: bool = False):
     az.ONLY_CRITICAL = only_critical
     az.analyze_path(directory)
-    
+
     if only_critical and az.errors_found:
         print(f'Found {az.critical_files} critical files.')
         sys.exit(1)
